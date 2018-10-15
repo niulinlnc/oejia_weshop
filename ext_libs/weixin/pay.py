@@ -38,7 +38,7 @@ def params_encoding(params, charset='utf-8'):
 def params_filter(params, delimiter='&', charset='utf-8',
                   excludes=['sign', 'sign_type']):
     ks = params.keys()
-    ks.sort()
+    ks = sorted(ks)
     newparams = {}
     prestr = ''
     if params.get('input_charset', None):
@@ -57,7 +57,7 @@ def params_filter(params, delimiter='&', charset='utf-8',
 def build_mysign(prestr, key=None, sign_type='MD5'):
     if sign_type == 'MD5':
         prestr += '&key=%s' % str(key)
-        return md5(prestr).hexdigest().upper()
+        return md5(prestr.encode('utf-8')).hexdigest().upper()
     return ''
 
 
