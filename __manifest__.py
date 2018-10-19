@@ -26,11 +26,11 @@
         'views/wxapp_user_views.xml',
         'views/wxapp_product_category_views.xml',
         'views/wxapp_payment_views.xml',
+        'views/wxapp_confirm_views.xml',
 
         'views/product_template_views.xml',
         'views/sale_order_views.xml',
 
-        'data/payment_sequence.xml',
         'data/crm_team_datas.xml',
         'data/wxapp_config_datas.xml',
 

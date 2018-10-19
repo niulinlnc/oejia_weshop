@@ -30,7 +30,7 @@ class SaleOrder(models.Model):
 
     shipper_id = fields.Many2one('oe.shipper', string='承运商', track_visibility='onchange')
     shipper_no = fields.Char('运单号', track_visibility='onchange')
-    shipper_traces = fields.Text('物流信息', compute='_compute_traces')
+    shipper_traces = fields.Text('物流信息')
 
 
 
@@ -49,7 +49,63 @@ class SaleOrder(models.Model):
     def _compute_traces(self):
         pass
 
+    def get_traces(self, refresh=False):
+        return self.shipper_traces
+
     @api.one
     @api.depends('logistics_price', 'amount_total')
     def _compute_pay_total(self):
         self.total = self.amount_total + self.logistics_price
+
+
+    @api.multi
+    def write(self, vals):
+        result = super(SaleOrder, self).write(vals)
+        if 'shipper_id' in vals:
+            self.delivery()
+        return result
+
+    @api.multi
+    def delivery(self):
+        self.write({'customer_status': 'unconfirmed'})
+
+    def delivery_window(self):
+        self.ensure_one()
+        return {
+            'name': '送货',
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.order',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'view_type': 'form',
+            'view_id': self.env.ref('oejia_weshop.sale_order_view_form_1029').id,
+            'target': 'new',
+            'domain': [],
+            'context': {
+                'default_customer_status': 'unconfirmed'
+            }
+        }
+
+    @api.multi
+    def check_paid(self):
+        self.write({'customer_status': 'pending'})
+
+    @api.multi
+    def check_pay_window(self):
+        new_context = dict(self._context) or {}
+        new_context['default_info'] = "此订单客户尚未在线支付，确认将其变为已支付状态？"
+        new_context['default_model'] = 'sale.order'
+        new_context['default_method'] = 'check_paid'
+        new_context['record_ids'] = [obj.id for obj in self]
+        return {
+            'name': u'确认订单已支付',
+            'type': 'ir.actions.act_window',
+            'res_model': 'wx.confirm',
+            'res_id': None,
+            'view_mode': 'form',
+            'view_type': 'form',
+            'context': new_context,
+            'view_id': self.env.ref('oejia_weshop.confirm_view_form').id,
+            'target': 'new'
+        }
+
